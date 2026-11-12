@@ -1,0 +1,53 @@
+name: aqua_guard
+description: "AquaGuard AI — মাছ চাষির জন্য স্মার্ট সহায়ক অ্যাপ"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  flutter_launcher_icons: ^0.14.4
+
+  tflite_flutter: ^0.12.1
+  image: ^4.1.7
+  image_picker: ^1.0.7
+  google_fonts: ^6.2.1
+
+  # --- Local storage (offline-first) ---
+  shared_preferences: ^2.2.2
+
+  # --- State management ---
+  provider: ^6.1.1
+
+  http: ^1.2.0
+
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.0.2
+
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/aquaguard_multiclass_model.tflite
+    - assets/multiclass_labels.txt
+    - assets/fish_gatekeeper_binary.tflite
+#    - assets/fish_gatekeeper_v2.tflite
+#    - assets/gatekeeper_labels.txt
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/aqua_guard_icon.png"
+  min_sdk_android: 21

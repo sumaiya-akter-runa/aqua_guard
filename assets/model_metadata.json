@@ -1,0 +1,26 @@
+{
+  "model_name": "AquaGuard Multi-Class V15",
+  "input_size": [
+    224,
+    224,
+    3
+  ],
+  "input_normalization": "raw 0-255 (EfficientNetB0 internal preprocessing, NO manual rescale)",
+  "classes": [
+    "Bacterial Red disease",
+    "Bacterial diseases - Aeromoniasis",
+    "Bacterial gill disease",
+    "Fungal diseases Saprolegniasis",
+    "Healthy Fish",
+    "Parasitic diseases",
+    "Viral diseases White tail disease"
+  ],
+  "num_classes": 7,
+  "backbone": "EfficientNetB0",
+  "test_accuracy": 0.9870466589927673,
+  "data_sources": [
+    "dataset1",
+    "dataset2",
+    "dataset3"
+  ]
+}
