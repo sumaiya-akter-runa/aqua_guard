@@ -1,358 +1,378 @@
-<div align="center">
+# AquaGuard AI
 
-# 🐟 AquaGuard AI – Fish Image Screening Models
+**A mobile assistant that helps fish farmers in Bangladesh detect pond and fish health problems earlier.**
 
-**Two EfficientNetB0 models, trained in TensorFlow/Keras and converted to TensorFlow Lite, for offline fish-health screening on a phone.**
+![Flutter](https://img.shields.io/badge/Flutter-Dart-02569B?logo=flutter&logoColor=white)
+![TensorFlow Lite](https://img.shields.io/badge/TensorFlow%20Lite-on--device-FF6F00?logo=tensorflow&logoColor=white)
+![Gemini](https://img.shields.io/badge/LLM-Gemini%20API-4285F4?logo=google&logoColor=white)
+![Backend](https://img.shields.io/badge/Backend-Flask-000000?logo=flask&logoColor=white)
+![Status](https://img.shields.io/badge/status-prototype-orange)
+![License](https://img.shields.io/badge/license-TBD-lightgrey)
 
-![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras-FF6F00?logo=tensorflow&logoColor=white)
-![TFLite](https://img.shields.io/badge/TensorFlow%20Lite-on--device-FF6F00?logo=tensorflow&logoColor=white)
-![Flutter](https://img.shields.io/badge/Flutter-app-02569B?logo=flutter&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
-![Status](https://img.shields.io/badge/status-research%20prototype-orange)
-![License](https://img.shields.io/badge/license-add%20yours-lightgrey)
+AquaGuard AI combines **water-quality analysis, on-device fish image screening, a Bangla AI assistant and pond record-keeping** in one Flutter app. Core features work **offline**, which matters for rural ponds with weak connectivity.
 
-</div>
-
-> ⚠️ **Important disclaimer**
-> This project is for **preliminary screening only. It is not a veterinary diagnosis** and must not replace advice from a fish pathologist or aquaculture expert. All results below come from **public-dataset testing, not field trials**. Performance may vary with image quality, fish species, disease stage and environmental conditions.
+> **Important notice.** AquaGuard AI provides **advisory and screening information only. It is not a veterinary diagnosis.** Image results come from models tested on public datasets, not field trials. Water-quality ranges are advisory and need expert review. Always consult a qualified fish health professional or local fisheries office before treating fish or changing pond management.
 
 ---
 
-## 📑 Table of contents
+## Table of contents
 
-1. [Background](#-background)
-2. [How it works](#-how-it-works)
-3. [Results at a glance](#-results-at-a-glance)
-4. [Model 1: Fish vs. Not-Fish](#-model-1-fish-vs-not-fish)
-5. [Model 2: Fish Disease Classifier](#-model-2-fish-disease-classifier-7-classes)
-6. [Datasets and licenses](#-datasets-and-licenses)
-7. [Repository structure](#-repository-structure)
-8. [Getting started](#-getting-started)
-9. [Inference example](#-inference-example)
-10. [TFLite conversion](#-tflite-conversion)
-11. [Flutter integration notes](#-flutter-integration-notes)
-12. [Known limitations](#-known-limitations)
-13. [Roadmap](#-roadmap)
-14. [Responsible use](#-responsible-use)
-15. [Contributing and feedback](#-contributing-and-feedback)
-16. [Acknowledgements](#-acknowledgements)
-17. [License](#-license)
-
----
-
-## 🌊 Background
-
-Fish farmers in Bangladesh often notice a disease problem only after losses have already started. Survey evidence suggests many farmers struggle to identify disease from symptoms, and access to experts is limited.
-
-**AquaGuard AI** is a Flutter app that gives farmers water-quality feedback, a Bangla AI assistant, pond records and **fish image screening**. This repository contains the **image-screening models** behind that last feature. They run **on-device**, so they work without an internet connection.
+1. [Why this project](#1-why-this-project)
+2. [Feature overview](#2-feature-overview)
+3. [Feature details](#3-feature-details)
+4. [AI components](#4-ai-components)
+5. [System architecture](#5-system-architecture)
+6. [Tech stack](#6-tech-stack)
+7. [Offline behaviour](#7-offline-behaviour)
+8. [Project structure](#8-project-structure)
+9. [Getting started](#9-getting-started)
+10. [Configuration and secrets](#10-configuration-and-secrets)
+11. [Image models: details and results](#11-image-models-details-and-results)
+12. [Datasets](#12-datasets)
+13. [Limitations and risks](#13-limitations-and-risks)
+14. [Roadmap](#14-roadmap)
+15. [Contributing and feedback](#15-contributing-and-feedback)
+16. [References](#16-references)
+17. [License](#17-license)
 
 ---
 
-## 🔄 How it works
+## 1. Why this project
 
-```mermaid
-flowchart LR
-    A[📷 Fish photo] --> B{Model 1<br/>Fish vs. Not-Fish}
-    B -- Not fish --> C[Ask for a clearer<br/>fish photo]
-    B -- Fish --> D[Model 2<br/>7-class disease classifier]
-    D --> E[Screening result<br/>+ signs + next steps]
+Bangladesh produced about **5.11 million tonnes of fish in 2024-25**. Too often, farmers learn about a problem in the pond only after fish are already lost.
+
+| Context | Figure | Source |
+|---|---|---|
+| Fisheries share of GDP | about 2.6% | [4] |
+| People involved in fisheries | roughly 20.6 million | [4] |
+| August 2024 floods | estimated Tk 1,899 crore fisheries loss; 197,166 ponds and hatcheries damaged in 13 districts | [1] |
+| July 2026, Chattogram | preliminary Tk 91.42 crore loss; fish washed away from 9,933 ponds, lakes and farms | [2] |
+
+A 2025 study of 400 finfish farmers in six districts (*Aquaculture International*, surveyed 2022) reported [3]:
+
+- **92%** named water-quality deterioration a major problem
+- **87%** named disease outbreaks a major problem
+- about **70%** had experienced disease within two years
+- only about **26%** could identify disease from symptoms
+
+Problems are noticed late, and decisions often lack records or quick access to experts. AquaGuard AI is built to close part of that gap.
+
+---
+
+## 2. Feature overview
+
+| Module | What it does | Works offline |
+|---|---|:---:|
+| Water analysis | Evaluates 9 pond water readings with rule-based feedback, risk level, trends and recommended actions | Yes |
+| Fish image screening | Two on-device TFLite models check for a fish, then screen for seven categories, with signs and next steps | Yes |
+| Bangla AI assistant | Answers pond questions by text or voice using the farmer's own readings | Partial (local rule-based fallback) |
+| Pond health score | Summarises overall pond condition in a single score | Yes |
+| Daily feed estimate | Suggests daily feed amounts | Yes |
+| Growth charts | Weekly growth tracking with charts | Yes |
+| History timeline | Chronological record of readings, screenings and actions | Yes |
+| Account and subscription | OTP verification and subscription through BdApps API | No |
+
+---
+
+## 3. Feature details
+
+### 3.1 Water-quality analysis
+
+- Input of **9 water readings** per check (list the parameters here, for example temperature, pH, dissolved oxygen, ammonia, and so on)
+- **Rule-based** evaluation against advisory ranges derived from WorldFish guidance [5]
+- Output: per-parameter status, an overall **risk level**, **trends** across checks, and **recommended actions**
+- Rule-based by design, so results are transparent, explainable and available offline
+
+### 3.2 Fish image screening (on-device)
+
+```
+Fish photo → Fish validation → Disease classification → Screening result and next steps
 ```
 
-1. **Fish validation:** a binary classifier checks that the photo actually contains a fish.
-2. **Disease classification:** if it does, a seven-class classifier predicts a screening category.
-3. **Result:** the app shows the category with signs and suggested next steps, framed as screening, not diagnosis.
+1. **Fish vs. Not-Fish** model rejects images that do not contain a fish.
+2. **7-class classifier** screens the image into one of:
+   - Bacterial Red Disease
+   - Bacterial Diseases – Aeromoniasis
+   - Bacterial Gill Disease
+   - Fungal Disease – Saprolegniasis
+   - Parasitic Diseases
+   - Viral Disease – White Tail Disease
+   - Healthy Fish
+3. The app shows the screening category with **observable signs and suggested next steps**, framed as screening rather than diagnosis.
+
+Runs entirely on the phone through TensorFlow Lite, so it works without internet.
+
+### 3.3 Bangla AI assistant
+
+- Ask pond-related questions by **text or voice** in Bangla
+- Powered by the **Gemini API**, using the farmer's **pond readings as context**
+- **20+ ready-made questions** for quick use
+- **Offline fallback:** a local rule-based assistant answers common questions when no connection is available
+
+### 3.4 Pond management tools
+
+- **Pond health score:** a combined indicator of pond condition (describe the inputs and formula here)
+- **Daily feed estimates:** guidance for feed quantity (describe the inputs here)
+- **Weekly growth charts:** track fish growth over time
+- **History timeline:** a record of readings, screenings and actions, supporting better decisions and expert conversations
+
+### 3.5 Verification and subscription
+
+- **OTP verification** and **subscription** handled through a **PHP service integrated with the BdApps API**
 
 ---
 
-## 📊 Results at a glance
+## 4. AI components
 
-| Model | Task | Test images | Test accuracy |
-|---|---|---:|---:|
-| Model 1 | Fish vs. Not-Fish (binary) | 1,814 | ~99% |
-| Model 2 | Fish disease (7 classes) | 772 | **98.70%** |
-
-> **Read these numbers with caution.** They come from public datasets. The fish/not-fish score in particular likely overstates real-world performance, because flowers and low-resolution CIFAR-10 images are far easier negatives than real ponds, nets, hands and murky water. Per-class metrics for Model 2 are still to be added (see [Roadmap](#-roadmap)).
+| Component | Type | Runs | Purpose |
+|---|---|---|---|
+| Fish vs. Not-Fish | EfficientNetB0 (TFLite) | On-device | Validate that a photo contains a fish |
+| Fish disease classifier | EfficientNetB0, 7 classes (TFLite) | On-device | Screen fish images for possible health issues |
+| Bangla assistant | LLM (Gemini API) | Cloud, with local rule-based fallback | Answer pond questions in Bangla |
+| Water analysis | Rule-based engine | On-device | Transparent, explainable water-quality feedback |
 
 ---
 
-## 🔍 Model 1: Fish vs. Not-Fish
+## 5. System architecture
 
-Screens each image before it reaches the disease classifier.
+```mermaid
+flowchart TB
+    subgraph App["Flutter app (Dart, Provider)"]
+        UI[UI and state]
+        WQ[Water analysis<br/>rule engine]
+        TFL[TFLite inference<br/>fish check + 7-class]
+        FB[Offline assistant<br/>rule-based fallback]
+        DB[(Local history<br/>and pond data)]
+    end
 
-| Item | Detail |
+    subgraph Cloud["Backend services"]
+        FL[Flask API on Render]
+        PHP[PHP service<br/>OTP and subscription]
+    end
+
+    GEM[Gemini API]
+    BD[BdApps API]
+
+    UI --> WQ
+    UI --> TFL
+    UI --> FB
+    UI --> DB
+    UI -- online --> FL
+    FL --> GEM
+    UI -- verification --> PHP
+    PHP --> BD
+```
+
+Adjust the diagram to match your exact request flow (for example whether the app calls Gemini directly or through the Flask backend).
+
+---
+
+## 6. Tech stack
+
+| Layer | Technology |
 |---|---|
-| Architecture | EfficientNetB0, transfer learning |
-| Task | Binary classification |
-| Dataset size | 12,090 images |
-| Class balance | 6,045 fish / 6,045 non-fish |
-| Non-fish sources | TensorFlow Flowers (3,670), CIFAR-10 (2,375) |
-| Test set | 1,814 images |
-| Test accuracy | ~99% |
-
-**Why a validator?** A seven-class softmax always picks a class, even for a flower or a hand. A fish check reduces nonsense outputs from irrelevant photos.
-
-**Caveat:** the current negatives are easy. Planned hard negatives include hands, nets, buckets, empty ponds, murky water, prawns and other aquatic animals, dead fish and market fish.
+| Mobile app | Flutter, Dart, Provider (state management) |
+| On-device AI | TensorFlow Lite |
+| Model training | TensorFlow, Keras (EfficientNetB0, transfer learning) |
+| LLM | Gemini API |
+| Backend | Flask, hosted on Render |
+| Verification and subscription | PHP, BdApps API (OTP, subscription) |
 
 ---
 
-## 🩺 Model 2: Fish Disease Classifier (7 classes)
+## 7. Offline behaviour
 
-### Classes
-
-| # | Class |
-|---|---|
-| 1 | Bacterial Red Disease |
-| 2 | Bacterial Diseases – Aeromoniasis |
-| 3 | Bacterial Gill Disease |
-| 4 | Fungal Disease – Saprolegniasis |
-| 5 | Parasitic Diseases |
-| 6 | Viral Disease – White Tail Disease |
-| 7 | Healthy Fish |
-
-> Class order above is for reading only. The actual index order must match the `class_names` used during training. See `labels/`.
-
-### Data and preprocessing
-
-| Item | Detail |
-|---|---|
-| Total images | 5,257 |
-| Split | 3,690 train / 795 validation / 772 test |
-| Input shape | 224 × 224 × 3 (RGB) |
-| Imbalance handling | Class weighting |
-| Augmentation | Horizontal flip, rotation, zoom, contrast, brightness |
-| Label handling | Labels from several public sources were standardised into the seven classes above |
-
-### Training recipe
-
-| Stage | What was trained | Notes |
-|---|---|---|
-| **Stage 1** | New classification head | Backbone frozen |
-| **Stage 2** | Last 80 layers of the backbone | Fine-tuned at a low learning rate |
-
-Regularisation and control: dropout, early stopping, learning-rate reduction on plateau.
-
-### Result
-
-| Metric | Value |
-|---|---:|
-| Test accuracy (772 images) | **98.70%** |
-| Per-class precision / recall / F1 | _TBD_ |
-| Confusion matrix | _TBD_ |
-
-<!-- Add confusion matrix image here, e.g. ![Confusion matrix](docs/confusion_matrix.png) -->
+| Capability | Offline | Notes |
+|---|:---:|---|
+| Water analysis | Yes | Local rule engine |
+| Fish image screening | Yes | Both TFLite models bundled in the app |
+| Pond health score, feed estimate, growth charts, history | Yes | Stored locally |
+| Bangla assistant | Partial | Local rule-based fallback; full LLM answers need internet |
+| OTP and subscription | No | Requires network |
 
 ---
 
-## 📚 Datasets and licenses
+## 8. Project structure
 
-| Dataset | Used for | Link |
-|---|---|---|
-| MatsyaDx-BD | Fish disease images | https://lnkd.in/gHacX3-7 |
-| Fish Disease Detection Dataset (irfanulhuda) | Fish disease images | https://lnkd.in/g895nKNQ |
-| TensorFlow Flowers | Non-fish negatives (3,670) | https://lnkd.in/gnf9CQmJ |
-| CIFAR-10 | Non-fish negatives (2,375) | https://lnkd.in/gTk-RSd9 |
-
-Datasets are **not redistributed** in this repository. Please download them from the original sources and follow each dataset's license and terms of use.
-
----
-
-## 🗂 Repository structure
-
-> Adjust to match your actual folders.
+> Adjust to match your actual repository.
 
 ```text
 .
-├── notebooks/
-│   ├── 01_fish_not_fish_training.ipynb
-│   ├── 02_fish_disease_training.ipynb
-│   └── 03_tflite_conversion_and_eval.ipynb
-├── models/
-│   ├── fish_not_fish.keras
-│   ├── fish_not_fish.tflite
-│   ├── fish_disease.keras
-│   └── fish_disease.tflite
-├── labels/
-│   ├── fish_not_fish_labels.txt
-│   └── fish_disease_labels.txt
-├── docs/                 # figures, confusion matrices, benchmarks
-├── requirements.txt
+├── app/                      # Flutter application
+│   ├── lib/
+│   │   ├── models/
+│   │   ├── providers/        # Provider state management
+│   │   ├── screens/
+│   │   ├── services/         # water rules, TFLite, assistant, API clients
+│   │   └── widgets/
+│   ├── assets/
+│   │   ├── models/           # fish_not_fish.tflite, fish_disease.tflite
+│   │   └── labels/
+│   └── pubspec.yaml
+├── backend/
+│   ├── flask_api/            # Flask service (Render)
+│   └── php_service/          # OTP and subscription (BdApps)
+├── ml/
+│   ├── notebooks/            # training and evaluation
+│   └── models/               # .keras and .tflite
+├── docs/                     # screenshots, diagrams, benchmarks
 └── README.md
 ```
 
 ---
 
-## 🚀 Getting started
+## 9. Getting started
+
+### Prerequisites
+
+- Flutter SDK and Dart
+- Python 3.x (Flask backend and ML notebooks)
+- PHP environment (verification service)
+- Gemini API key
+- BdApps credentials (for OTP and subscription)
+
+### Run the app
 
 ```bash
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/<username>/<repository>.git
+cd <repository>/app
+flutter pub get
+flutter run
+```
 
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+### Run the Flask backend
+
+```bash
+cd backend/flask_api
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+flask run
 ```
 
-Suggested `requirements.txt`:
+### Reproduce the ML models
 
-```text
-tensorflow
-numpy
-pillow
-scikit-learn
-matplotlib
-```
-
-Training notebooks were developed for a GPU environment (for example Google Colab or Kaggle). Pin the exact TensorFlow version you used so results are reproducible.
-
----
-
-## 🧪 Inference example
-
-Two-stage pipeline using the TFLite models:
-
-```python
-import numpy as np
-import tensorflow as tf
-from PIL import Image
-
-IMG_SIZE = (224, 224)
-FISH_THRESHOLD = 0.5          # tune on hard negatives
-CONFIDENCE_THRESHOLD = 0.60   # below this, report "uncertain"
-
-DISEASE_LABELS = [l.strip() for l in open("labels/fish_disease_labels.txt")]
-
-
-def load_interpreter(path):
-    interp = tf.lite.Interpreter(model_path=path)
-    interp.allocate_tensors()
-    return interp
-
-
-def run(interp, x):
-    inp = interp.get_input_details()[0]
-    out = interp.get_output_details()[0]
-    interp.set_tensor(inp["index"], x)
-    interp.invoke()
-    return interp.get_tensor(out["index"])[0]
-
-
-def preprocess(path):
-    img = Image.open(path).convert("RGB").resize(IMG_SIZE)
-    # Keras EfficientNet usually expects raw 0-255 pixels with rescaling
-    # inside the model. Match exactly what you used in training.
-    return np.expand_dims(np.array(img, dtype=np.float32), 0)
-
-
-fish_check = load_interpreter("models/fish_not_fish.tflite")
-disease = load_interpreter("models/fish_disease.tflite")
-
-x = preprocess("fish.jpg")
-
-# Stage 1: is it a fish?
-# Confirm which output index means "fish" in YOUR training setup.
-p_fish = float(run(fish_check, x)[0])
-if p_fish < FISH_THRESHOLD:
-    print("No fish detected. Please retake the photo.")
-else:
-    # Stage 2: screening category
-    probs = run(disease, x)
-    top = int(np.argmax(probs))
-    if probs[top] < CONFIDENCE_THRESHOLD:
-        print("Uncertain result. Please consult a fish health expert.")
-    else:
-        print(f"Screening result: {DISEASE_LABELS[top]} ({probs[top]:.1%})")
-        print("This is a screening result, not a diagnosis.")
+```bash
+cd ml
+pip install -r requirements.txt
+# open the notebooks in notebooks/ (GPU recommended, e.g. Colab or Kaggle)
 ```
 
 ---
 
-## 🔧 TFLite conversion
+## 10. Configuration and secrets
 
-```python
-import tensorflow as tf
+**Never commit API keys, tokens or credentials.** Use environment variables or an untracked config file.
 
-model = tf.keras.models.load_model("models/fish_disease.keras")
+| Secret | Used by |
+|---|---|
+| `GEMINI_API_KEY` | Bangla assistant (backend or app, per your design) |
+| BdApps credentials | PHP verification and subscription service |
+| Backend base URL | Flutter app |
 
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-# Optional: smaller and faster, but re-check accuracy after quantisation.
-# converter.optimizations = [tf.lite.Optimize.DEFAULT]
-
-tflite_model = converter.convert()
-with open("models/fish_disease.tflite", "wb") as f:
-    f.write(tflite_model)
-```
-
-### Benchmarks (to be filled in)
-
-| Model | Format | Size | Latency (device) | Test accuracy |
-|---|---|---:|---:|---:|
-| Fish vs. Not-Fish | Keras | _TBD_ | n/a | ~99% |
-| Fish vs. Not-Fish | TFLite | _TBD_ | _TBD_ | _TBD_ |
-| Fish disease | Keras | _TBD_ | n/a | 98.70% |
-| Fish disease | TFLite | _TBD_ | _TBD_ | _TBD_ |
-
-Accuracy should be re-measured **after conversion**, ideally through the same preprocessing path the Flutter app uses.
+Add a `.env.example` listing variable names without values, and include `.env` in `.gitignore`.
 
 ---
 
-## 📱 Flutter integration notes
+## 11. Image models: details and results
 
-- Load both `.tflite` files and the label files as app assets.
-- Resize to 224 × 224 and keep RGB channel order.
-- Use the **same pixel scaling as training**. A mismatch (for example 0–255 vs. 0–1) silently reduces accuracy.
-- Show the confidence and an "uncertain, consult an expert" state instead of always forcing a class.
-- Always show the screening disclaimer next to results and next-step advice.
+### 11.1 Fish vs. Not-Fish (binary)
+
+| Item | Detail |
+|---|---|
+| Architecture | EfficientNetB0, transfer learning |
+| Data | 12,090 images: 6,045 fish and 6,045 non-fish |
+| Non-fish sources | TensorFlow Flowers (3,670), CIFAR-10 (2,375) |
+| Test set | 1,814 images |
+| Test accuracy | about 99% |
+
+**Caution.** This number likely overstates real-world performance. Flowers and low-resolution CIFAR-10 images are far easier than real ponds, nets, hands and murky water.
+
+### 11.2 Fish disease classifier (7 classes)
+
+| Item | Detail |
+|---|---|
+| Architecture | EfficientNetB0, transfer learning |
+| Input | 224 × 224 × 3 (RGB) |
+| Data | 5,257 images: 3,690 train / 795 validation / 772 test |
+| Imbalance handling | Class weighting |
+| Augmentation | Flip, rotation, zoom, contrast, brightness |
+| Test accuracy | 98.70% (772 images) |
+
+**Training**
+
+| Stage | Trainable | Notes |
+|---|---|---|
+| 1 | New classification head | Backbone frozen |
+| 2 | Last 80 backbone layers | Low learning rate fine-tuning |
+
+Dropout, early stopping and learning-rate reduction were used.
+
+### 11.3 Metrics still to be reported
+
+| Item | Status |
+|---|---|
+| Per-class precision, recall, F1 and confusion matrix | Not yet reported |
+| TFLite model size, latency, post-conversion accuracy | Not yet reported |
+| Evaluation on realistic hard negatives | Not yet reported |
+
+All results come from **public-dataset testing, not field trials**.
 
 ---
 
-## ⚠️ Known limitations
+## 12. Datasets
 
-- **Public data only.** No field trials yet.
-- **Closed-set classifier.** The seven-class model always picks a class, even for unseen diseases, other species or poor photos.
-- **Visually similar conditions.** Bacterial, viral and parasitic conditions can look alike in photos and may not be separable from an image alone.
-- **Easy negatives.** The fish check was trained against flowers and CIFAR-10, not realistic farm scenes.
-- **Dataset bias.** Models may partly learn background, camera or dataset style rather than disease signs.
-- **Species and stage.** Performance may differ across species and disease stages not well represented in the data.
+| Dataset | Role | Link |
+|---|---|---|
+| MatsyaDx-BD | Fish disease images | https://lnkd.in/gHacX3-7 |
+| Fish Disease Detection Dataset (irfanulhuda) | Fish disease images | https://lnkd.in/g895nKNQ |
+| TensorFlow Flowers | Non-fish negatives | https://lnkd.in/gnf9CQmJ |
+| CIFAR-10 | Non-fish negatives | https://lnkd.in/gTk-RSd9 |
+
+Datasets are not redistributed here. Please follow each dataset's original license.
 
 ---
 
-## 🗺 Roadmap
+## 13. Limitations and risks
 
-- [ ] Per-class precision, recall, F1 and confusion matrix for the 7-class model
-- [ ] Duplicate and near-duplicate check across train/validation/test splits
+- **Not a diagnosis.** Image output is screening only and some conditions look alike in photos.
+- **Public data only.** No field trials have been done yet.
+- **Closed-set classifier.** The 7-class model picks one class even for unseen diseases, other species or poor photos.
+- **Optimistic validator score.** Easy negatives overstate fish-check accuracy.
+- **Possible dataset shortcuts.** Models may learn background or dataset style, and near-duplicate images across splits can inflate accuracy.
+- **Advisory water ranges.** Ranges need expert review and may vary by species, region and season.
+- **LLM answers.** Generated responses can be wrong or incomplete and should not replace expert advice.
+- **Connectivity.** Full assistant answers, OTP and subscription require internet.
+
+---
+
+## 14. Roadmap
+
+- [ ] Per-class metrics and confusion matrix for the 7-class model
 - [ ] Realistic hard negatives for the fish check
-- [ ] Confidence threshold with an "uncertain, consult an expert" outcome
+- [ ] "Uncertain, consult an expert" outcome using confidence thresholds
 - [ ] TFLite size, latency and post-conversion accuracy benchmarks
-- [ ] Expert review of class definitions and next-step advice
+- [ ] Expert review of water ranges, class definitions and recommendations
 - [ ] Field testing with farmers
+- [ ] Flood-risk alerts
 
 ---
 
-## 🤝 Responsible use
+## 15. Contributing and feedback
 
-- Treat outputs as **screening hints**, not diagnoses.
-- Do not make treatment or medication decisions from the app output alone.
-- Confirm suspected outbreaks with a qualified fish health professional or local fisheries office.
+Feedback is especially welcome from **fish pathologists, aquaculture specialists, ML engineers and farmers**. Please open an issue for bugs, incorrect guidance or suggestions, or submit a pull request.
 
 ---
 
-## 💬 Contributing and feedback
+## 16. References
 
-Feedback is especially welcome from **fish pathologists, aquaculture specialists and ML engineers**.
-
-- 🐛 Found a problem or a mislabelled class? Open an issue.
-- 💡 Have a suggestion (hard negatives, evaluation ideas, domain corrections)? Open a discussion or pull request.
-
----
-
-## 🙏 Acknowledgements
-
-- Authors and maintainers of MatsyaDx-BD and the Fish Disease Detection Dataset
-- TensorFlow Flowers and CIFAR-10 dataset teams
-- TensorFlow, Keras and TensorFlow Lite communities
+1. ICSF: https://icsf.net/?p=125026
+2. https://lnkd.in/g-punQUP
+3. https://lnkd.in/gD7hXdqZ
+4. The Observer BD: https://observerbd.com/news/588253
+5. WorldFish: https://lnkd.in/g53DSDDf and https://lnkd.in/giCmkUsz
 
 ---
 
-## 📄 License
+## 17. License
 
-Add your chosen license here (for example MIT or Apache-2.0) and keep dataset licenses separate. Model weights trained on third-party data may inherit usage restrictions from those datasets.
+Add your chosen license here (for example MIT or Apache-2.0). Datasets remain under their original licenses, and model weights trained on third-party data may inherit their usage terms.
